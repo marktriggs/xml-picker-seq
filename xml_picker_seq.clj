@@ -1,63 +1,44 @@
 (ns net.dishevelled.xml-picker-seq
-  (:import (java.util.concurrent LinkedBlockingQueue)
-           (java.util.concurrent TimeUnit))
-  (:use clojure.contrib.duck-streams))
+  (:use clojure.contrib.duck-streams)
+  (:use clojure.contrib.seq-utils))
 
 
-(defn- enqueue [#^LinkedBlockingQueue queue elt]
-  (.offer queue
-          elt
-          Long/MAX_VALUE
-          TimeUnit/SECONDS))
+
+(defn root-element? [element]
+  (instance? nu.xom.Document (.getParent element)))
 
 
-(defn- extract [rdr record-tag-name extract-fn queue]
+(defn- extract [rdr record-tag-name extract-fn enqueue]
   (let [empty (nu.xom.Nodes.)
         keep? (atom false)
         factory (proxy [nu.xom.NodeFactory] []
 
-
                   (startMakingElement [name ns]
                     (when (= name record-tag-name)
-                      (swap! keep? (constantly true)))
+                      (reset! keep? true))
                       (let [#^nu.xom.NodeFactory this this]
                         (proxy-super startMakingElement name ns)))
 
 
                   (finishMakingElement [#^nu.xom.Element element]
                     (when (= (.getLocalName element) record-tag-name)
-                      (let [value (extract-fn element)]
-                        (when (not (nil? value))
-                          (enqueue queue value)))
-                      (swap! keep? (constantly false)))
+                      (println element)
+                      (when-let [value (extract-fn element)]
+                        (enqueue value))
+                      (reset! keep? false))
 
-                    (if (or @keep?
-                            (instance? nu.xom.Document (.getParent element)))
+                    (if (or @keep? (root-element? element))
                       (let [#^nu.xom.NodeFactory this this]
                         (proxy-super finishMakingElement element))
                       empty)))]
-    (try (.build (nu.xom.Builder. factory)
-                 rdr)
-         (finally (enqueue queue :EOF)))))
+    (.build (nu.xom.Builder. factory)
+            rdr)))
 
-
-(defn- queue-seq [#^LinkedBlockingQueue queue #^Thread producer]
-  (lazy-seq
-    (let [elt (.take queue)]
-      (if (= elt :EOF)
-        (do (.join producer)
-            nil)
-        (cons elt (queue-seq queue producer))))))
 
 
 (defn xml-picker-seq [rdr record-tag-name extract-fn]
-  (let [queue (LinkedBlockingQueue. 100)
-        producer (doto (Thread. (fn []
-                                  (try
-                                   (extract rdr record-tag-name extract-fn queue)
-                                   (catch Exception _))))
-                   (.start))]
-    (queue-seq queue producer)))
+  (fill-queue (fn [fill] (extract rdr record-tag-name extract-fn fill))
+              {:queue-size 128}))
 
 
 
