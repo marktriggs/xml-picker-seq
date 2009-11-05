@@ -22,7 +22,6 @@
 
                   (finishMakingElement [#^nu.xom.Element element]
                     (when (= (.getLocalName element) record-tag-name)
-                      (println element)
                       (when-let [value (extract-fn element)]
                         (enqueue value))
                       (reset! keep? false))
