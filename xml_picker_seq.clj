@@ -2,13 +2,11 @@
   (:use clojure.contrib.duck-streams)
   (:use clojure.contrib.seq-utils))
 
-
-
-(defn root-element? [element]
+(defn root-element? [#^nu.xom.Element element]
   (instance? nu.xom.Document (.getParent element)))
 
 
-(defn- extract [rdr record-tag-name extract-fn enqueue]
+(defn- extract [#^java.io.Reader rdr record-tag-name extract-fn enqueue]
   (let [empty (nu.xom.Nodes.)
         keep? (atom false)
         factory (proxy [nu.xom.NodeFactory] []
@@ -18,7 +16,6 @@
                       (reset! keep? true))
                       (let [#^nu.xom.NodeFactory this this]
                         (proxy-super startMakingElement name ns)))
-
 
                   (finishMakingElement [#^nu.xom.Element element]
                     (when (= (.getLocalName element) record-tag-name)
@@ -42,15 +39,14 @@
 
 
 (comment
-;; using it!
-(with-open [rdr (reader "/home/mtriggs/smaller.xml")]
-  (let [context (nu.xom.XPathContext. "marc" "http://www.loc.gov/MARC21/slim")]
-    (let [s (xml-picker-seq rdr "record"
-                            (fn [element]
-                              {:title (.. element
-                                          (query
-                                           "//marc:datafield[@tag = '245']/marc:subfield[@code = 'a']" context)
-                                          (get 0)
-                                          getValue)}))]
-      (doall s))))
-)
+  (with-open [#^java.io.Reader rdr (reader "/home/mst/updates.xml")]
+    (let [context (nu.xom.XPathContext. "marc" "http://www.loc.gov/MARC21/slim")]
+      (let [s (xml-picker-seq rdr "record"
+			      (fn [#^nu.xom.Element element]
+				{:title (.. element
+					    (query
+					     "//marc:datafield[@tag = '245']/marc:subfield[@code = 'a']" context)
+					    (get 0)
+					    getValue)}))]
+	(println (take 10 (dorun s)))))))
+
