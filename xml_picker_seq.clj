@@ -48,5 +48,5 @@
 					     "//marc:datafield[@tag = '245']/marc:subfield[@code = 'a']" context)
 					    (get 0)
 					    getValue)}))]
-	(println (take 10 (dorun s)))))))
+	(println (take 10 s))))))
 
