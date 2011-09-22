@@ -1,5 +1,5 @@
 xml-picker-seq
---------------
+==============
 
 This wrapper tries to make it easy to pull out interesting bits of large
 XML files in a space-efficient way.
@@ -12,10 +12,13 @@ all I want to do is:
   - Pull out a few of its fields
   - Throw the rest away, rinse and repeat
 
-so that's what this does, using XOM and a queue behind the scenes. Some
-example usages:
+so that's what this does, using XOM and a queue behind the scenes.
 
-1.  Parsing Solr responses (which look like this):
+Example usage
+-------------
+
+Parsing a Solr response
+-----------------------
 
     <response>
       <lst name="responseHeader">
@@ -59,7 +62,8 @@ This:
 
 
 
-2.  Parsing MARCXML records
+Parsing MARCXML records
+-----------------------
 
 Slightly more fiddly because of the namespaces, but much the same:
 
