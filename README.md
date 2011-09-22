@@ -84,4 +84,4 @@ Slightly more fiddly because of the namespaces, but much the same:
 
 Copyright (C) 2009 Mark Triggs
 
-FIXME - How is the code licensed?
+Distributed under the Eclipse Public License. See the file "COPYING".
