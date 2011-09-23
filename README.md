@@ -47,9 +47,7 @@ to extract a list of authors:
                     (xml-picker-seq.core/xml-picker-seq
                      rdr
                     "doc"
-                    (fn [doc]
-                      (let [nodes (.query doc "arr[@name='author']/str")]
-                        (map #(.. nodes (get %) getValue) (range (.size nodes)))))))))
+                    (xml-picker-seq.core/xpath-query "arr[@name='author']/str")))))
 
 This:
 
@@ -61,7 +59,6 @@ This:
   - Gets the string values for each author node and returns them
 
 
-
 Parsing MARCXML records
 -----------------------
 
@@ -69,14 +66,10 @@ Slightly more fiddly because of the namespaces, but much the same:
 
     (with-open [rdr (clojure.contrib.duck-streams/reader "http://www.loc.gov/standards/marcxml/xml/collection.xml")]
       (let [context (nu.xom.XPathContext. "marc" "http://www.loc.gov/MARC21/slim")
-            titles (xml-picker-seq.core/xml-picker-seq rdr "record"
-                                                       (fn [element]
-                                                         (.. element
-                                                             (query
-                                                              "//marc:datafield[@tag = '245']/marc:subfield[@code = 'a']"
-                                                              context)
-                                                             (get 0)
-                                                             getValue)))]
+            titles (xml-picker-seq.core/xml-picker-seq
+                    rdr "record"
+                    (xml-picker-seq.core/xpath-query "//marc:datafield[@tag = '245']/marc:subfield[@code = 'a']"
+                                                     :context context :final-fn first))]
         (doseq [title titles]
           (do-something-with title))))
 
