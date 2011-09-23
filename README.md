@@ -73,6 +73,21 @@ Slightly more fiddly because of the namespaces, but much the same:
         (doseq [title titles]
           (do-something-with title))))
 
+Parsing KML files
+-----------------
+
+    (ns kml-parser.core
+      (:use [xml-picker-seq.core :only [xml-picker-seq xpath-query]]
+            [clojure.contrib.duck-streams :only [reader]])
+      (:require [clojure.contrib.string :as string]))
+
+    (defn read-kml [filename]
+      (with-open [rdr (reader filename)]
+        (doall (xml-picker-seq rdr "Placemark"
+                               (juxt (xpath-query "*[local-name()='Point']/*[local-name()='coordinates']" :final-fn first)
+                                     (xpath-query "*[local-name()='description']" :final-fn first
+                                                  :extract-fn #(->> % .getValue (string/split #"\n"))))))))
+
 ## License
 
 Copyright (C) 2009 Mark Triggs
