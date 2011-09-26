@@ -1,6 +1,6 @@
 (ns xml-picker-seq.core
-  (:use [clojure.contrib.seq-utils :only [fill-queue]]
-        [clojure.contrib.duck-streams :only [reader]]))
+  (:use [clojure.java.io :only [reader]]
+        [clojure.contrib.seq-utils :only [fill-queue]])) ; FIXME - contrib's depreciated
 
 (defn root-element? [#^nu.xom.Element element]
   (instance? nu.xom.Document (.getParent element)))
@@ -44,11 +44,11 @@
       (final-fn (map #(extract-fn (.get nodes %)) (range (.size nodes)))))))
 
 (comment
-  (with-open [rdr (clojure.contrib.duck-streams/reader "http://www.loc.gov/standards/marcxml/xml/collection.xml")]
+  (with-open [rdr (reader "http://www.loc.gov/standards/marcxml/xml/collection.xml")]
     (let [context (nu.xom.XPathContext. "marc" "http://www.loc.gov/MARC21/slim")
-          titles (xml-picker-seq.core/xml-picker-seq
+          titles (xml-picker-seq
                   rdr "record"
-                  (xml-picker-seq.core/xpath-query "//marc:datafield[@tag = '245']/marc:subfield[@code = 'a']"
-                                                   :context context :final-fn first))]
+                  (xpath-query "//marc:datafield[@tag = '245']/marc:subfield[@code = 'a']"
+                               :context context :final-fn first))]
       (doseq [title titles]
-        (println (take 10 s))))))
+        (println title)))))
