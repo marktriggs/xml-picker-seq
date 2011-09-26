@@ -3,4 +3,4 @@
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
                  [xom/xom "1.2.5"]]
-  :dev-dependencies [[swank-clojure "1.3.0-SNAPSHOT"]])
+  :dev-dependencies [[swank-clojure "1.3.3-SNAPSHOT"]])
