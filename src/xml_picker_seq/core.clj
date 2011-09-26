@@ -1,6 +1,6 @@
 (ns xml-picker-seq.core
-  (:use [clojure.java.io :only [reader]]
-        [clojure.contrib.seq-utils :only [fill-queue]])) ; FIXME - contrib's depreciated
+  (:import [java.util.concurrent LinkedBlockingQueue])
+  (:use [clojure.java.io :only [reader]]))
 
 (defn root-element? [#^nu.xom.Element element]
   (instance? nu.xom.Document (.getParent element)))
@@ -11,10 +11,10 @@
         factory (proxy [nu.xom.NodeFactory] []
 
                   (startMakingElement [name ns]
-                    (when (= name record-tag-name)
+                    (when (= (last (.split name ":")) record-tag-name)
                       (reset! keep? true))
-                      (let [#^nu.xom.NodeFactory this this]
-                        (proxy-super startMakingElement name ns)))
+                    (let [#^nu.xom.NodeFactory this this]
+                      (proxy-super startMakingElement name ns)))
 
                   (finishMakingElement [#^nu.xom.Element element]
                     (when (= (.getLocalName element) record-tag-name)
@@ -30,8 +30,12 @@
             rdr)))
 
 (defn xml-picker-seq [rdr record-tag-name extract-fn]
-  (fill-queue (fn [fill] (extract rdr record-tag-name extract-fn fill))
-              {:queue-size 128}))
+  (let [queue (LinkedBlockingQueue. 128)
+        enqueue-fn (fn [elt] (.put queue elt))]
+    (future
+      (extract rdr record-tag-name extract-fn enqueue-fn)
+      (enqueue-fn :eof))
+    (take-while #(not= % :eof) (repeatedly #(.take queue)))))
 
 (defn xpath-query
   "Takes a XPath query string and optionally a context object, extract-fn
