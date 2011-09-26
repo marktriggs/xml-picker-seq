@@ -42,7 +42,7 @@ Parsing a Solr response
 
 to extract a list of authors:
 
-    (with-open [rdr (clojure.contrib.duck-streams/reader (java.net.URL. "http://my.host/solr/select?q=my+query"))]
+    (with-open [rdr (clojure.java.io/reader (java.net.URL. "http://my.host/solr/select?q=my+query"))]
       (doall (apply concat
                     (xml-picker-seq.core/xml-picker-seq
                      rdr
@@ -64,7 +64,7 @@ Parsing MARCXML records
 
 Slightly more fiddly because of the namespaces, but much the same:
 
-    (with-open [rdr (clojure.contrib.duck-streams/reader "http://www.loc.gov/standards/marcxml/xml/collection.xml")]
+    (with-open [rdr (clojure.java.io/reader "http://www.loc.gov/standards/marcxml/xml/collection.xml")]
       (let [context (nu.xom.XPathContext. "marc" "http://www.loc.gov/MARC21/slim")
             titles (xml-picker-seq.core/xml-picker-seq
                     rdr "record"
@@ -78,15 +78,21 @@ Parsing KML files
 
     (ns kml-parser.core
       (:use [xml-picker-seq.core :only [xml-picker-seq xpath-query]]
-            [clojure.contrib.duck-streams :only [reader]])
-      (:require [clojure.contrib.string :as string]))
+            [clojure.java.io :only [reader]])
+      (:require [clojure.string :as string]))
 
     (defn read-kml [filename]
       (with-open [rdr (reader filename)]
         (doall (xml-picker-seq rdr "Placemark"
                                (juxt (xpath-query "*[local-name()='Point']/*[local-name()='coordinates']" :final-fn first)
                                      (xpath-query "*[local-name()='description']" :final-fn first
-                                                  :extract-fn #(->> % .getValue (string/split #"\n"))))))))
+                                                  :extract-fn #(-> % .getValue (string/split #"\n"))))))))
+
+TODO
+----
+
+ - Replace `clojure.contrib.seq-utils/fill-queue`, contrib is depreciated.
+
 
 ## License
 
