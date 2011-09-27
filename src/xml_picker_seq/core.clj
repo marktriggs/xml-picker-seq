@@ -31,14 +31,15 @@
 
 (defn xml-picker-seq [rdr record-tag-name extract-fn]
   (let [queue (LinkedBlockingQueue. 128)
-        enqueue-fn (fn [elt] (.put queue elt))]
+        enqueue-fn (fn [elt] (.put queue elt))
+        eof (Object.)]
     (future
       (try
         (extract rdr record-tag-name extract-fn enqueue-fn)
         (catch Throwable e
           (.printStackTrace e))
-        (finally (enqueue-fn :eof))))
-    (take-while #(not= % :eof) (repeatedly #(.take queue)))))
+        (finally (enqueue-fn eof))))
+    (take-while #(not (identical? % eof)) (repeatedly #(.take queue)))))
 
 (defn xpath-query
   "Takes a XPath query string and optionally a context object, extract-fn
