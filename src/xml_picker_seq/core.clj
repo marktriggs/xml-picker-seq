@@ -2,28 +2,28 @@
   (:import [java.util.concurrent LinkedBlockingQueue])
   (:use [clojure.java.io :only [reader]]))
 
-(defn root-element? [#^nu.xom.Element element]
+(defn root-element? [^nu.xom.Element element]
   (instance? nu.xom.Document (.getParent element)))
 
-(defn- extract [#^java.io.Reader rdr record-tag-name extract-fn enqueue]
+(defn- extract [^java.io.Reader rdr record-tag-name extract-fn enqueue]
   (let [empty (nu.xom.Nodes.)
         keep? (atom false)
         factory (proxy [nu.xom.NodeFactory] []
 
-                  (startMakingElement [name ns]
+                  (startMakingElement [^String name ^String ns]
                     (when (= (last (.split name ":")) record-tag-name)
                       (reset! keep? true))
-                    (let [#^nu.xom.NodeFactory this this]
+                    (let [^nu.xom.NodeFactory this this]
                       (proxy-super startMakingElement name ns)))
 
-                  (finishMakingElement [#^nu.xom.Element element]
+                  (finishMakingElement [^nu.xom.Element element]
                     (when (= (.getLocalName element) record-tag-name)
                       (when-let [value (extract-fn element)]
                         (enqueue value))
                       (reset! keep? false))
 
                     (if (or @keep? (root-element? element))
-                      (let [#^nu.xom.NodeFactory this this]
+                      (let [^nu.xom.NodeFactory this this]
                         (proxy-super finishMakingElement element))
                       empty)))]
     (.build (nu.xom.Builder. factory)
